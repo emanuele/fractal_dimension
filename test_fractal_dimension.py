@@ -7,8 +7,7 @@ from skimage.color import rgb2grey
 
 
 if __name__ == '__main__':
-    # filename = 'sierpinski.png'
-    # filename = 'emanuele_01.jpg'
+    # filename = 'emanuele_01b.jpg'
     filename = 'Sierpinski_triangle.png'
     image = io.imread(filename)
     image = rgb2grey(image)
