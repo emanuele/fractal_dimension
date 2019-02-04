@@ -7,15 +7,24 @@ import matplotlib.pyplot as plt
 from scipy.stats import ttest_rel
 
 
-def load_compute(filename):
+def load_compute(filename, box_size_max=None, box_size=None):
     image = nib.load(filename).get_data()
-    box_side_max = np.min(image.shape) / 3.0
-    fractal_dimension, box_side, counts = compute_fractal_dimension(image, n_steps=n_steps, box_side_max=box_side_max, verbose=False)
+    if box_size_max is None:
+        box_size_max = np.min(image.shape) / 3.0
+
+    fractal_dimension, box_size, counts = compute_fractal_dimension(image,
+                                                                    n_steps=n_steps,
+                                                                    box_size_max=box_size_max,
+                                                                    box_size=box_size,
+                                                                    verbose=False)
     return fractal_dimension
 
 
 if __name__ == '__main__':
-    segmented_by_tractseg = False
+    segmented_by_tractseg = True
+
+    box_size_max = 3.0
+    box_size = np.arange(1, 5)
 
     if segmented_by_tractseg:
         subjects_path = glob('bundles/bundle_masks_IFOF/sub-*')  # segmented by Tractseg
@@ -27,9 +36,11 @@ if __name__ == '__main__':
         subjects_id.remove('991267')  # outlier: TractSeg fails in segmenting
 
     template_gt_tractseg = 'bundles/trk2mask_GTMSK/sub-%s/sub-%s_var-GTMSK_IFO_left.nii.gz'  # Groud Truth TractSeg
+    # template_gt_tractseg = 'bundles/trk2mask_GTMSK/sub-%s/sub-%s_var-GTMSK_AF_left.nii.gz'  # Groud Truth TractSeg
     template_gt_pietro = 'bundles/trk2mask_IFOFMSK/sub-%s/sub-%s_var-IFOFMSK_ioff.left.nii.gz'  # GRound Truth Pietro
     if segmented_by_tractseg:
         template_tractseg = 'bundles/bundle_masks_IFOF/sub-%s/IFO_left.nii.gz'  # Segmented by TractSeg
+        # template_tractseg = 'bundles/bundle_masks_IFOF/sub-%s/AF_left.nii.gz'  # Segmented by TractSeg
 
     n_steps = 50
     fd_gt_tractseg = np.zeros(len(subjects_id))
@@ -39,16 +50,19 @@ if __name__ == '__main__':
 
     for i, sid in enumerate(subjects_id):
         filename_gt_tractseg = template_gt_tractseg % (sid, sid)
-        fd_gt_tractseg[i] = load_compute(filename_gt_tractseg)
+        fd_gt_tractseg[i] = load_compute(filename_gt_tractseg,
+                                         box_size_max, box_size)
         print("%s - FD = %s" % (filename_gt_tractseg, fd_gt_tractseg[i]))
 
         filename_gt_pietro = template_gt_pietro % (sid, sid)
-        fd_gt_pietro[i] = load_compute(filename_gt_pietro)
+        fd_gt_pietro[i] = load_compute(filename_gt_pietro,
+                                       box_size_max, box_size)
         print("%s - FD = %s" % (filename_gt_pietro, fd_gt_pietro[i]))
 
         if segmented_by_tractseg:
             filename_tractseg = template_tractseg % (sid)
-            fd_tractseg[i] = load_compute(filename_tractseg)
+            fd_tractseg[i] = load_compute(filename_tractseg,
+                                          box_size_max, box_size)
             print("%s - FD = %s" % (filename_tractseg, fd_tractseg[i]))
 
     print("")
@@ -57,13 +71,17 @@ if __name__ == '__main__':
     if segmented_by_tractseg:
         print("Mean/Std Fractal Dimension for Tractseg: %s / %s" % (fd_tractseg.mean(), fd_tractseg.std()))
     t, p_value = ttest_rel(fd_gt_tractseg, fd_gt_pietro)
-    print("Paired Two-sample t-test: p-value=%s" % p_value)    
+    print("Paired Two-sample t-test between GT TractSeg and GT Pietro: p-value=%s" % p_value)
+    if segmented_by_tractseg:
+        t2, p_value2 = ttest_rel(fd_tractseg, fd_gt_pietro)
+        print("Paired Two-sample t-test between TractSeg and GT Pietro: p-value=%s" % p_value2)
 
     plt.ion()
     plt.figure()
     n_bins = 20
     if segmented_by_tractseg:
         tmp = np.concatenate([fd_gt_tractseg, fd_gt_pietro, fd_tractseg])
+        # tmp = np.concatenate([fd_gt_tractseg, fd_tractseg])
     else:
         tmp = np.concatenate([fd_gt_tractseg, fd_gt_pietro])
 
