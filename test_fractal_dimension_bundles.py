@@ -6,16 +6,22 @@ import nibabel as nib
 
 
 if __name__ == '__main__':
-    filename = 'bundles/trk2mask_GTMSK/sub-599469/sub-599469_var-GTMSK_IFO_left.nii.gz'
-    # filename = 'bundles/trk2mask_GTMSK/sub-599469/sub-599469_var-GTMSK_IFO_right.nii.gz'
-    # filename = 'bundles/trk2mask_GTMSK/sub-599469/sub-599469_var-GTMSK_SLF_I_right.nii.gz'
-    # filename = 'bundles/trk2mask_IFOFMSK/sub-599469/sub-599469_var-IFOFMSK_ioff.left.nii.gz'
+    subject = '896778'  # '599469'  # 
+    hemisphere = 'left'  # 'right'
+    filename = 'bundles/trk2mask_GTMSK/sub-%s/sub-%s_var-GTMSK_IFO_%s.nii.gz' % (subject, subject, hemisphere)
+    # filename = 'bundles/trk2mask_IFOFMSK/sub-%s/sub-%s_var-IFOFMSK_ioff.%s.nii.gz' % (subject, subject, hemisphere)
+    # filename = 'bundles/bundle_masks_IFOF/sub-%s/IFO_%s.nii.gz' % (subject, hemisphere)
+    print("Loading %s" % filename)
     image = nib.load(filename).get_data()
 
     n_steps = 100
-    box_side_max = np.min(image.shape) / 3.0
-    fractal_dimension, box_side, counts = compute_fractal_dimension(image, n_steps=n_steps, box_side_max=box_side_max)
+    box_size_max = None # 5.0 # np.min(image.shape) / 3.0
+    box_size = np.arange(1, 15)
+    fractal_dimension, box_size, counts = compute_fractal_dimension(image,
+                                                                    n_steps=n_steps,
+                                                                    box_size_max=box_size_max,
+                                                                    box_size=box_size)
     print("Fractal dimension = %s" % fractal_dimension)
 
     plt.ion()
-    plot_fractal_dimension(box_side, counts)
+    plot_fractal_dimension(box_size, counts)
