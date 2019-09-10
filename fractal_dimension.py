@@ -27,19 +27,28 @@ def compute_fractal_dimension(array, n_steps=10, box_size_min=1.0,
         if verbose:
             print("Box side=%s , counts=%s" % (bs, counts[i]))
 
-    coefficients = np.polyfit(np.log(box_size), np.log(counts), 1)  # linear regression
-    fractal_dimension = -coefficients[0]
+    if (counts < 1).any():
+        fractal_dimension = 0.0
+    else:
+        # linear regression:
+        coefficients = np.polyfit(np.log(box_size), np.log(counts), 1)
+        fractal_dimension = -coefficients[0]
+
     return fractal_dimension, box_size, counts
 
 
 def plot_fractal_dimension(box_size, counts):
-    coefficients = np.polyfit(np.log(box_size), np.log(counts), 1)  # linear regression
-    fractal_dimension = -coefficients[0]
-    plt.figure()
-    plt.loglog(box_size, counts, 'ko')
-    plt.loglog(box_size, np.exp(np.polyval(coefficients, np.log(box_size))),
-               'r-', label='fractal_dimension=%s' % fractal_dimension)
-    plt.xlabel('box_size')
-    plt.ylabel('counts')
-    plt.axis('tight')
-    plt.legend(loc='best', numpoints=1)
+    if (counts >= 1).all():
+        # linear regression:
+        coefficients = np.polyfit(np.log(box_size), np.log(counts), 1)
+        fractal_dimension = -coefficients[0]
+        plt.figure()
+        plt.loglog(box_size, counts, 'ko')
+        plt.loglog(box_size, np.exp(np.polyval(coefficients, np.log(box_size))),
+                   'r-', label='fractal_dimension=%s' % fractal_dimension)
+        plt.xlabel('box_size')
+        plt.ylabel('counts')
+        plt.axis('tight')
+        plt.legend(loc='best', numpoints=1)
+    else:
+        print("Cannot plot when counts is zero")
